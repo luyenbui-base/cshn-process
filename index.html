@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSHN · Luồng vận hành</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --card:#ffffff; --ink:#0f172a; --muted:#5b6478; --line:#e7eaf3; --edge:#9aa6c4;
+  --soft:#f6f8fe; --lane-a:#f7f9ff; --lane-b:#fbf8ff;
+  --primary:#1e3a9e; --primary-2:#0c2a85; --brand:#2f63e0;
+  --grad:linear-gradient(90deg,#3b5bdb 0%,#7c4ddb 55%,#d34fd1 100%);
+  --wf:#2f63e0; --wf-bg:#eef3ff; --sales:#1e3a9e; --sales-bg:#eef1fb;
+  --bpm:#c43fb8; --bpm-bg:#fcf0fb; --lead:#7c4ddb; --lead-bg:#f3eefe;
+  --ns:#0e8f8a; --ns-bg:#e9f8f6; --new:#d34fd1; --done:#16a34a; --warn:#d97706;
+  --focus:#2f63e0; --shadow:0 10px 30px -12px rgba(30,58,158,.18), 0 2px 6px rgba(15,23,42,.04);
+  --dot:rgba(30,58,158,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1020; --card:#121a30; --ink:#e8ecf7; --muted:#9aa5c0; --line:#243052; --edge:#5b6a92;
+    --soft:#111a33; --lane-a:#0f1730; --lane-b:#141433;
+    --primary:#4f74ff; --primary-2:#3457e6; --brand:#6d93ff;
+    --wf:#6d93ff; --wf-bg:#152447; --sales:#93a8ff; --sales-bg:#18214a;
+    --bpm:#e57ddb; --bpm-bg:#33173a; --lead:#b293ff; --lead-bg:#241a4a;
+    --ns:#3cc7bf; --ns-bg:#0f2d31; --new:#e57ddb; --shadow:0 10px 30px -12px rgba(0,0,0,.6);
+    --dot:rgba(147,168,255,.08);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1020; --card:#121a30; --ink:#e8ecf7; --muted:#9aa5c0; --line:#243052; --edge:#5b6a92;
+  --soft:#111a33; --lane-a:#0f1730; --lane-b:#141433;
+  --primary:#4f74ff; --primary-2:#3457e6; --brand:#6d93ff;
+  --wf:#6d93ff; --wf-bg:#152447; --sales:#93a8ff; --sales-bg:#18214a;
+  --bpm:#e57ddb; --bpm-bg:#33173a; --lead:#b293ff; --lead-bg:#241a4a;
+  --ns:#3cc7bf; --ns-bg:#0f2d31; --new:#e57ddb; --shadow:0 10px 30px -12px rgba(0,0,0,.6);
+  --dot:rgba(147,168,255,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:15px/1.6 "Be Vietnam Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background-color:var(--bg);
+  background-image:radial-gradient(var(--dot) 1px,transparent 1px),
+    radial-gradient(60% 40% at 85% 0%,rgba(124,77,219,.10),transparent 70%),
+    radial-gradient(50% 35% at 0% 10%,rgba(47,99,224,.10),transparent 70%);
+  background-size:22px 22px,100% 100%,100% 100%;background-attachment:fixed}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 72px}
+h1{font-size:46px;line-height:1.15;margin:18px 0 14px;letter-spacing:-.025em;font-weight:700}
+h2{font-size:24px;margin:56px 0 16px;letter-spacing:-.015em;font-weight:700;display:flex;align-items:center;gap:12px}
+h2 .no{display:inline-grid;place-items:center;min-width:36px;height:36px;padding:0 10px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:15px;font-weight:700}
+h3{font-size:16px;margin:0 0 8px;font-weight:600}
+.grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);margin:0;font-size:17px;max-width:760px}
+.sub b{color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.t-wf{color:var(--wf)} .t-sales{color:var(--sales)} .t-bpm{color:var(--bpm)} .t-lead{color:var(--lead)} .t-ns{color:var(--ns)} .t-new{color:var(--new)}
+
+/* Top bar + hero */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:10px 12px 10px 22px;box-shadow:var(--shadow)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--brand);letter-spacing:.02em}
+.logo i{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--brand);color:#fff;font-style:normal;font-size:14px}
+.topnav{display:flex;gap:22px;font-weight:500;font-size:15px}
+.topnav a{color:var(--ink);text-decoration:none}
+.topnav a:hover{color:var(--brand)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:999px;font-weight:600;font-size:15px;text-decoration:none;white-space:nowrap}
+.btn-primary{background:linear-gradient(180deg,var(--primary),var(--primary-2));color:#fff;box-shadow:0 8px 18px -8px rgba(30,58,158,.6)}
+.btn-ghost{border:1px solid var(--line);color:var(--ink);background:var(--card)}
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;padding:48px 8px 8px}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:999px;background:var(--wf-bg);border:1px solid color-mix(in srgb,var(--brand) 25%,transparent);color:var(--primary);font-weight:700;font-size:14px;letter-spacing:.06em}
+.pill::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--brand)}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+.stats{display:grid;gap:12px}
+.stat{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow)}
+.stat .n{display:inline-grid;place-items:center;min-width:72px;padding:8px 14px;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:700;font-size:17px}
+.stat span{font-weight:500}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin:28px 0 0;font-size:13px;color:var(--muted)}
+.legend>span{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+.sw{width:12px;height:12px;border-radius:4px;border:2px solid}
+
+/* System map */
+.sysmap{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:stretch}
+.sys{position:relative;border-radius:20px;padding:18px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+.sys::before{content:"";position:absolute;left:0;right:0;top:0;height:4px}
+.sys b{display:block;font-size:15px}
+.sys .app{font-size:13px;font-weight:600;margin-top:2px}
+.sys .st{margin-top:10px;font-size:13px}
+.sys.bpm::before{background:var(--bpm)} .sys.bpm .app{color:var(--bpm)}
+.sys.wf::before{background:var(--wf)} .sys.wf .app{color:var(--wf)}
+.sys.sales::before{background:var(--grad)} .sys.sales .app{color:var(--sales)}
+.sys .branch{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.notes ol,.notes ul{margin:0;padding-left:20px}
+.notes li{margin:3px 0}
+
+
+/* System flow (section 1) */
+.flow-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:18px 16px}
+.sysflow{display:block;width:100%;min-width:760px;height:auto;font-family:inherit}
+.sysflow .sn rect{stroke-width:1.5}
+.sysflow .sn.bpm rect{fill:var(--bpm-bg);stroke:var(--bpm)} .sysflow .sn.bpm .sn-s{fill:var(--bpm)}
+.sysflow .sn.wf rect{fill:var(--wf-bg);stroke:var(--wf)} .sysflow .sn.wf .sn-s{fill:var(--wf)}
+.sysflow .sn.ns rect{fill:var(--ns-bg);stroke:var(--ns)} .sysflow .sn.ns .sn-s{fill:var(--ns)}
+.sysflow .sn.hub rect{fill:var(--primary);stroke:none} .sysflow .sn.hub text{fill:#fff}
+.sysflow .sn-t{font-size:14px;font-weight:600;fill:var(--ink);text-anchor:middle}
+.sysflow .sn-s{font-size:12.5px;font-weight:600;text-anchor:middle}
+.sysflow .st{stroke-width:1}
+.sysflow .st.done{fill:color-mix(in srgb,var(--done) 12%,transparent);stroke:var(--done)}
+.sysflow .st.wait{fill:color-mix(in srgb,var(--warn) 14%,transparent);stroke:var(--warn)}
+.sysflow .st-t{font-size:12px;font-weight:600;fill:var(--done);text-anchor:middle}
+.sysflow .wait-t{fill:var(--warn)}
+.sysflow .st-line{stroke:var(--edge);stroke-width:1;stroke-dasharray:3 4}
+.sysflow .note rect{fill:var(--soft);stroke:var(--line);stroke-dasharray:4 3}
+.sysflow .note text{font-size:11.5px;fill:var(--muted)}
+
+/* Diagram */
+.part{font-size:15px;font-weight:600;color:var(--primary);margin:18px 4px 10px}
+.part:first-of-type{margin-top:0}
+.diagram-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:24px;background:var(--card);box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
+.diagram{position:relative}
+.diagram svg{position:absolute;inset:0}
+.lane-label{position:absolute;z-index:1;padding:2px 10px;font-size:11.5px;line-height:1.5;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:999px;white-space:nowrap}
+.lane-label b{color:var(--ink);font-weight:600}
+.node{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px 6px;
+  border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:600 12px/1.25 inherit;cursor:pointer;
+  box-shadow:0 4px 12px -6px rgba(30,58,158,.25);transition:box-shadow .15s, transform .15s}
+.node:hover{box-shadow:0 10px 22px -10px rgba(30,58,158,.45);transform:translateY(-2px)}
+.node:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.node.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 35%,transparent),0 10px 22px -10px rgba(30,58,158,.45)}
+.node.k-bpm{border-color:var(--bpm);background:var(--bpm-bg)}
+.node.k-wf{border-color:var(--wf);background:var(--wf-bg)}
+.node.k-sales{border-color:var(--sales);background:var(--sales-bg)}
+.node.k-golive{border:none;background:linear-gradient(180deg,var(--primary),var(--primary-2));color:#fff}
+.node.k-lead{border-color:var(--lead);background:var(--lead-bg)}
+.node.k-ns{border-color:var(--ns);background:var(--ns-bg)}
+.node .badge{position:absolute;top:-10px;right:-6px;background:var(--grad);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px}
+.node .sla{position:absolute;bottom:-18px;left:calc(50% + 6px);text-align:left;white-space:nowrap;font-size:11px;font-weight:500;color:var(--muted)}
+.edge{fill:none;stroke:var(--edge);stroke-width:1.5}
+.edge.dash{stroke-dasharray:5 4}
+.arrowhead{fill:var(--edge)}
+.elabel{font-size:11px;fill:var(--muted);font-family:inherit}
+.hint{font-size:13px;color:var(--muted);margin:10px 4px 0}
+
+/* Detail panel */
+.node .obadge{position:absolute;top:-9px;left:-6px;background:#facc15;color:#422006;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:999px;letter-spacing:.03em;border:1.5px solid var(--card)}
+.outbox{margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.outbox h4{margin:0;padding:8px 12px;font-size:13px;background:#fef9c3;color:#713f12}
+.otbl{font-size:13px}
+.otbl th{background:transparent;font-size:12px;color:var(--muted);padding:6px 12px}
+.otbl td{padding:7px 12px}
+
+.detail{margin-top:16px;display:grid;grid-template-columns:1.2fr 1fr;gap:24px}
+.detail h3{font-size:20px;margin:0 0 6px;font-weight:700}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:8px 10px;font-size:14px;margin:12px 0 0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.detail ul{margin:6px 0 0;padding-left:20px}
+.detail li{margin:4px 0}
+.callout{border:1px solid color-mix(in srgb,var(--lead) 30%,transparent);background:var(--lead-bg);padding:10px 14px;border-radius:14px;font-size:14px;margin-top:12px}
+
+
+/* Tier tables */
+:root{--t-d:#fbe7ef;--t-r:#fdf6dc;--t-n:#e3f3e6;--t-o:#fde8d7}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--t-d:#3a1d2b;--t-r:#352c12;--t-n:#16301d;--t-o:#3a2414}}
+:root[data-theme="dark"]{--t-d:#3a1d2b;--t-r:#352c12;--t-n:#16301d;--t-o:#3a2414}
+.tier-tbl td,.tier-tbl th{text-align:center;vertical-align:middle}
+.tier-tbl td:first-child,.tier-tbl th:first-child{text-align:left}
+.tier-tbl .tr-d,.tier-tbl tr.tr-d td{background:var(--t-d)}
+.tier-tbl .tr-r,.tier-tbl tr.tr-r td{background:var(--t-r)}
+.tier-tbl .tr-n,.tier-tbl tr.tr-n td{background:var(--t-n)}
+.tier-tbl .tr-o,.tier-tbl tr.tr-o td{background:var(--t-o)}
+.tier-tbl{table-layout:fixed}
+.tier-tbl.conv td{text-align:center}
+.tier-tbl.conv td[rowspan]:nth-child(-n+2),.tier-tbl.conv tr.tr-o td:nth-child(-n+2){text-align:left}
+.tier-tbl.conv tr td[rowspan]{border-right:1px solid var(--line)}
+.tier-tbl i{color:var(--muted);font-size:13px}
+.tier-tbl .pt{font-weight:700}
+
+/* Tables */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:11px 14px;text-align:left;vertical-align:top}
+tr:last-child td{border-bottom:none}
+th{background:var(--soft);font-weight:600;color:var(--primary)}
+td.num{white-space:nowrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+.grid2>.tbl-wrap{display:flex;flex-direction:column}
+.grid2>.tbl-wrap>table{flex:1}
+.grid2 .hint{margin:10px 14px 12px}
+.grid2 .hint + .hint{margin-top:-6px}
+.footer{margin-top:48px;font-size:13px;color:var(--muted)}
+
+@media (max-width:960px){
+  .hero{grid-template-columns:1fr;padding-top:32px}
+  .topnav{display:none}
+  .sysmap{grid-template-columns:1fr 1fr}
+  .notes,.detail,.grid2{grid-template-columns:1fr}
+  h1{font-size:36px}
+}
+@media (max-width:520px){
+  .sysmap{grid-template-columns:1fr}
+  h1{font-size:30px}
+  .topbar .btn{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="topbar">
+  <div class="logo"><i>CS</i>CSHN · SOLUTION</div>
+  <div class="topnav">
+    <a href="#he-thong">Hệ thống</a><a href="#so-do">Sơ đồ</a><a href="#ttgl">TTGL</a><a href="#tier">Tier CHS</a><a href="#chinh-sach">Chính sách</a>
+  </div>
+  <a class="btn btn-primary" href="#so-do">Xem sơ đồ →</a>
+</nav>
+
+<header class="hero">
+  <div>
+    <span class="pill">BASE 3.0 · CO PROCESS</span>
+    <h1>Luồng vận hành team<br><span class="grad">CSHN</span></h1>
+    <p class="sub">Vẽ lại từ sơ đồ Miro <b>CSHN | Luồng vận hành</b>, tài liệu <b>COHN – Quy trình vận hành 2026 – SSOT</b> (tab CO Process) và <b>Changelogs biweekly 24/10/2026</b>. Trạng thái chuyển đổi Base 2.0 → 3.0: đã hoàn thành.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#so-do">Xem quy trình →</a>
+      <a class="btn btn-ghost" href="#chinh-sach">Thay đổi chính sách ↗</a>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="n">4</span><span>hệ thống: BPM 3.0, Workflow 3.0, Sales 3.0, Income 1.0</span></div>
+    <div class="stat"><span class="n">26</span><span>bước trên 4 luồng: Bàn giao, Triển khai, Go-live, Nghiệm thu</span></div>
+    <div class="stat"><span class="n">5</span><span>bước mới trên luồng 3.0 (2 bước Leader đã có mô tả)</span></div>
+    <div class="stat"><span class="n">26/10</span><span>QT Triển khai trên Sales 3.0 đã go-live, toàn bộ luồng 3.0 đã hoàn thành</span></div>
+  </div>
+</header>
+
+<div class="legend">
+  <span><i class="sw" style="border-color:var(--bpm);background:var(--bpm-bg)"></i>BPM 3.0 / Income 1.0</span>
+  <span><i class="sw" style="border-color:var(--wf);background:var(--wf-bg)"></i>Workflow 3.0</span>
+  <span><i class="sw" style="border-color:var(--sales);background:var(--sales-bg)"></i>Sales 3.0</span>
+  <span><i class="sw" style="border-color:var(--lead);background:var(--lead-bg)"></i>Bước Leader / BC duyệt</span>
+  <span><i class="sw" style="border-color:var(--ns);background:var(--ns-bg)"></i>Nghiệm thu Non-software</span>
+  <span><span class="tag" style="background:#facc15;color:#422006;border-color:#eab308">OUTPUT</span>bước có OUTPUT bắt buộc (bấm vào bước để xem danh sách trường)</span>
+  <span><span class="tag t-new">Mới</span>có trên sơ đồ mới, chưa có trong SSOT</span>
+</div>
+
+<!-- 1. System map -->
+<h2 id="he-thong"><span class="no">1</span>Luồng hệ thống trên Base 3.0</h2>
+<div class="flow-wrap">
+<svg class="sysflow" viewBox="0 0 1000 300" role="img" aria-label="Luồng hệ thống: QT Hợp đồng (BPM 3.0 sang Income 1.0) chuyển sang Bàn giao khách hàng (Workflow 3.0), rồi QT Triển khai khách hàng (Sales 3.0), từ đó rẽ sang Nghiệm thu Non-software và Go-live và đánh giá triển khai (Workflow 3.0)">
+  <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+
+  <!-- status row -->
+  <g class="st-row">
+    <rect class="st done" x="35" y="14" width="140" height="26" rx="13"/><text class="st-t" x="105" y="31">● Đã hoàn thành</text>
+    <rect class="st done" x="265" y="14" width="140" height="26" rx="13"/><text class="st-t" x="335" y="31">● Đã hoàn thành</text>
+    <rect class="st done" x="515" y="14" width="140" height="26" rx="13"/><text class="st-t" x="585" y="31">● Đã hoàn thành</text>
+    <rect class="st done" x="805" y="14" width="140" height="26" rx="13"/><text class="st-t" x="875" y="31">● Đã hoàn thành</text>
+    <line class="st-line" x1="175" y1="27" x2="263" y2="27" marker-end="url(#ah2)"/>
+    <line class="st-line" x1="405" y1="27" x2="513" y2="27" marker-end="url(#ah2)"/>
+    <line class="st-line" x1="655" y1="27" x2="803" y2="27" marker-end="url(#ah2)"/>
+  </g>
+
+  <!-- edges -->
+  <path class="edge" d="M190,150 L248,150" marker-end="url(#ah2)"/>
+  <path class="edge" d="M420,150 L488,150" marker-end="url(#ah2)"/>
+  <path class="edge" d="M680,150 C725,150 725,98 768,98" marker-end="url(#ah2)"/>
+  <path class="edge" d="M680,150 C725,150 725,202 768,202" marker-end="url(#ah2)"/>
+  <text class="elabel" x="454" y="140" text-anchor="middle">tự tạo deal</text>
+
+  <!-- nodes -->
+  <g class="sn bpm"><rect x="20" y="120" width="170" height="60" rx="14"/>
+    <text class="sn-t" x="105" y="146">QT Hợp đồng</text><text class="sn-s" x="105" y="166">BPM 3.0 → Income 1.0</text></g>
+  <g class="sn wf"><rect x="250" y="120" width="170" height="60" rx="14"/>
+    <text class="sn-t" x="335" y="146">Bàn giao khách hàng</text><text class="sn-s" x="335" y="166">Workflow 3.0</text></g>
+  <g class="sn hub"><rect x="490" y="118" width="190" height="64" rx="14"/>
+    <text class="sn-t" x="585" y="146">QT Triển khai khách hàng</text><text class="sn-s" x="585" y="167">Sales 3.0</text></g>
+  <g class="sn ns"><rect x="770" y="70" width="210" height="56" rx="14"/>
+    <text class="sn-t" x="875" y="94">Nghiệm thu Non-software</text><text class="sn-s" x="875" y="113">Workflow 3.0</text></g>
+  <g class="sn wf"><rect x="770" y="174" width="210" height="56" rx="14"/>
+    <text class="sn-t" x="875" y="198">Go-live &amp; đánh giá triển khai</text><text class="sn-s" x="875" y="217">Workflow 3.0</text></g>
+
+  <!-- notes -->
+  <g class="note"><rect x="490" y="200" width="190" height="62" rx="10"/>
+    <text x="500" y="220">Tạo deal theo cơ chế như cũ:</text><text x="500" y="237">• Bóc tách doanh thu theo bộ</text><text x="500" y="254">• Xác định ngày go-live theo bộ</text></g>
+  <g class="note"><rect x="730" y="246" width="250" height="44" rx="10"/>
+    <text x="740" y="264">Job go-live theo từng bộ giải pháp;</text><text x="740" y="281">tự bắn CHS_U, CHS_O mỗi tháng đánh giá</text></g>
+  <g class="note"><rect x="730" y="134" width="250" height="30" rx="10"/>
+    <text x="740" y="154">Chỉ tạo cho HĐ có dịch vụ non-software</text></g>
+</svg>
+</div>
+
+<!-- 2. Process diagram -->
+<h2 id="so-do"><span class="no">2</span>Sơ đồ quy trình vận hành</h2>
+<div class="diagram-scroll"><div class="diagram" id="diagram"></div></div>
+<p class="hint">Bấm vào từng bước để xem mô tả, quy tắc vận hành và SLA. Trên màn hình hẹp, kéo ngang để xem toàn bộ sơ đồ.</p>
+
+<div class="card detail" id="detail" aria-live="polite"></div>
+
+<!-- 3. TTGL -->
+<h2 id="ttgl"><span class="no">3</span>Thời gian go-live (TTGL) theo bộ giải pháp</h2>
+<div class="grid2">
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Giá trị HĐ phần mềm</th><th>TTGL tiêu chuẩn</th><th>Cộng thêm (từ 2 bộ trở lên)</th></tr></thead>
+      <tbody>
+        <tr><td>SA (&lt; 20 triệu)</td><td class="num">21 ngày</td><td>–</td></tr>
+        <tr><td>MA (&lt; 60 triệu)</td><td class="num">30 ngày</td><td class="num">+15 ngày/bộ</td></tr>
+        <tr><td>MA (&lt; 100 triệu)</td><td class="num">35 ngày</td><td class="num">+15 ngày/bộ</td></tr>
+        <tr><td>MA (&lt; 200 triệu)</td><td class="num">45 ngày</td><td class="num">+20 ngày/bộ</td></tr>
+        <tr><td>KA (&lt; 500 triệu)</td><td class="num">60 ngày</td><td class="num">+30 ngày/bộ</td></tr>
+        <tr><td>KA (&gt; 500 triệu)</td><td class="num">75 ngày</td><td class="num">+30 ngày/bộ</td></tr>
+      </tbody>
+    </table>
+    <p class="hint">Thời hạn go-live = Ngày phân công CS + TTGL tiêu chuẩn (+ thời gian cộng thêm).</p>
+    <p class="hint">Đối với các hợp đồng có triển khai thêm hạng mục Non-Software, tổng thời gian Go-live quy định được cộng thêm 15 ngày.</p>
+  </div>
+  <div class="card">
+    <h3>Quy tắc áp dụng</h3>
+    <ul style="margin:0;padding-left:20px">
+      <li>Một mức duy nhất theo tổng giá trị HĐ phần mềm/năm (ARR), không phân biệt bộ nào triển khai trước hay sau; tất cả bộ trong cùng HĐ go-live trong cùng quỹ thời gian.</li>
+      <li><b>Gia hạn:</b> CS_PM tạo đề xuất gia hạn (không giới hạn số lần/quý), nhưng tổng thời gian gia hạn lũy kế không vượt quá TTGL quy định ban đầu.</li>
+      <li><b>Quá hạn:</b> quá 150% định mức (gồm cả gia hạn tối đa) mà chưa go-live → toàn bộ ARR của bộ đó ghi nhận vào CR1 kỳ kế tiếp.</li>
+      <li><b>Tự động go-live:</b> quá hạn mà CS chưa xác nhận hoặc gia hạn → hệ thống ghi nhận ngày go-live là mùng 1 tháng kế tiếp.</li>
+    </ul>
+    <div class="callout"><b>Update từ T11.2026:</b> TTGL tách thành <b>TTGL min</b> (thời gian tối thiểu để go-live 1 bộ giải pháp, đảm bảo quick win) và <b>TTGL max</b> (thời gian tối đa hoàn thành toàn bộ giải pháp).
+      <div style="margin-top:6px">Trong đó:</div>
+      <ul style="margin:4px 0 0;padding-left:20px">
+        <li><b>TTGL min</b> = Ngày phân công CS + TTGL tiêu chuẩn</li>
+        <li><b>TTGL max</b> = Ngày phân công CS + TTGL tiêu chuẩn (+ thời gian cộng thêm)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Tier -->
+<h2 id="tier"><span class="no">4</span>Phân loại phân hệ &amp; khung quy đổi CHS_U</h2>
+<h3 class="part">4.1 Phân loại phân hệ theo quy mô tài khoản</h3>
+<p class="muted" style="margin:0 4px 12px">Khung đánh giá (Tier) được áp dụng linh hoạt dựa trên số lượng người dùng bộ sản phẩm được quy định tại hợp đồng của khách hàng, nhằm đảm bảo tính phù hợp với quy mô vận hành.</p>
+<div class="tbl-wrap">
+<table class="tier-tbl">
+  <colgroup><col style="width:20%"><col><col><col><col style="width:24%"></colgroup><thead><tr><th>Segment by Package</th><th>Work Ops</th><th>People Ops</th><th>Business Ops</th><th>App lẻ / Finance Ops / Hiring / Infor+</th></tr></thead>
+  <tbody>
+    <tr><td><b>0 – 15 users</b></td><td class="tr-r">Routine</td><td class="tr-r">Routine</td><td class="tr-d">Daily</td><td class="tr-o">Output</td></tr>
+    <tr><td><b>16 – 200 users</b></td><td class="tr-d">Daily</td><td class="tr-r">Routine</td><td class="tr-r">Routine</td><td class="tr-o">Output</td></tr>
+    <tr><td><b>201 – 500 users</b></td><td class="tr-d">Daily</td><td class="tr-r">Routine</td><td class="tr-n">On-Demand</td><td class="tr-o">Output</td></tr>
+    <tr><td><b>501 – 1000 users</b></td><td class="tr-n">On-Demand</td><td class="tr-r">Routine</td><td class="tr-n">On-Demand</td><td class="tr-o">Output</td></tr>
+    <tr><td><b>1000+ users</b></td><td class="tr-n">On-Demand</td><td class="tr-n">On-Demand</td><td class="tr-n">On-Demand</td><td class="tr-o">Output</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 class="part" style="margin-top:28px">4.2 Khung quy đổi</h3>
+<p class="muted" style="margin:0 4px 12px">Với mỗi phân nhóm (Tier), tỷ lệ hoạt động trong tháng (% Active) được quy đổi sang điểm số thành phần để tính điểm đóng góp vào chỉ số CHS_CS.</p>
+<div class="tbl-wrap">
+<table class="tier-tbl conv">
+  <colgroup><col style="width:14%"><col style="width:32%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup><thead><tr><th>Deal segment</th><th>Đặc tính</th><th>Đại diện</th><th>% Active in Month</th><th>Point</th></tr></thead>
+  <tbody>
+    <tr class="tr-d"><td rowspan="4"><b>Tier 1</b><br><i>Daily Core</i></td><td rowspan="4">Ứng dụng tương tác hằng ngày, xử lý luồng vận hành chính của doanh nghiệp.</td><td rowspan="4">Work Ops</td><td>&gt; 60%</td><td class="pt">100</td></tr>
+    <tr class="tr-d"><td>&gt; 30% – 60%</td><td class="pt">60</td></tr>
+    <tr class="tr-d"><td>&gt; 10% – 30%</td><td class="pt">40</td></tr>
+    <tr class="tr-d"><td>≤ 10%</td><td class="pt">0</td></tr>
+    <tr class="tr-r"><td rowspan="4"><b>Tier 2</b><br><i>Routine Check</i></td><td rowspan="4">Ứng dụng sử dụng theo chu kỳ (tuần/tháng) hoặc theo sự kiện phát sinh.</td><td rowspan="4">People Ops, Business Ops</td><td>&gt; 50%</td><td class="pt">100</td></tr>
+    <tr class="tr-r"><td>&gt; 30% – 50%</td><td class="pt">80</td></tr>
+    <tr class="tr-r"><td>&gt; 10% – 30%</td><td class="pt">50</td></tr>
+    <tr class="tr-r"><td>≤ 10%</td><td class="pt">0</td></tr>
+    <tr class="tr-n"><td rowspan="4"><b>Tier 3</b><br><i>On-Demand</i></td><td rowspan="4">Quy mô người dùng lớn hoặc ứng dụng chuyên môn sâu, tần suất sử dụng không thường xuyên.</td><td rowspan="4">Hệ thống nhiều người dùng</td><td>&gt; 30%</td><td class="pt">100</td></tr>
+    <tr class="tr-n"><td>&gt; 15% – 30%</td><td class="pt">80</td></tr>
+    <tr class="tr-n"><td>&gt; 5% – 15%</td><td class="pt">40</td></tr>
+    <tr class="tr-n"><td>≤ 5%</td><td class="pt">0</td></tr>
+    <tr class="tr-o"><td><b>Tier 4</b><br><i>Output Driven</i></td><td>Tập trung vào kết quả đầu ra thực tế, không phụ thuộc vào tần suất sử dụng.</td><td>Finance Ops / Hiring / App lẻ</td><td>Không áp dụng tỷ lệ hoạt động</td><td class="pt">Tính theo tỷ lệ % hoàn thành mục tiêu đầu ra</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="hint"><b>Lưu ý:</b> Khung quy đổi sẽ được cập nhật sớm trong tháng.</p>
+
+<!-- 5. Policy changes -->
+<h2 id="chinh-sach"><span class="no">5</span>Các hạng mục thay đổi trong chính sách CS Policy</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Mục</th><th>Hiện tại</th><th>Cập nhật</th><th>Áp dụng</th></tr></thead>
+  <tbody>
+    <tr><td><b>Com nhiều năm</b></td><td>Trả theo DT 1 năm, từng năm theo mức com năm đầu</td><td>Deal nhận từ 01/07/2026: DT ghi nhận hàng năm, 50% năm đầu, 50% còn lại chia đều các năm sau; com theo performance từng năm.</td><td class="num">T07.2026</td></tr>
+    <tr><td><b>Chỉ số CR</b></td><td>DT phần mềm go-live trong kỳ ÷ DT phải go-live trong kỳ</td><td>DT đã go-live trong kỳ ÷ (DT đã go-live trong kỳ + DT pending sau kỳ). Pending: member tính deal nhận từ 01/07/2026, Leader từ 01/01/2026.</td><td class="num">T10.2026</td></tr>
+    <tr><td><b>Com renew CSM</b></td><td>Trả từng năm (chia đều); DT renew CSM không tính vào DT performance</td><td>Giữ nguyên</td><td class="num">T10.2026</td></tr>
+    <tr><td><b>Tỉ lệ active theo package</b></td><td>Tính cả app Xspace</td><td>Chỉ tính app Xspace vào tất cả các bộ</td><td class="num">T11.2026</td></tr>
+    <tr><td><b>Khung quy đổi CHS_U</b></td><td>Khung hiện hành</td><td>Cập nhật bước nhảy theo dữ liệu thật Q3.2026 (tứ phân vị)</td><td class="num">T11.2026</td></tr>
+    <tr><td><b>DT ghi nhận perform</b></td><td>Ghi nhận full giá trị HĐ</td><td>Ghi nhận 50% giá trị HĐ với deal nhiều năm; DT nhiều năm cộng vào DT triển khai các năm tiếp theo</td><td class="num">T11.2026</td></tr>
+    <tr><td><b>DT theo bộ giải pháp</b></td><td>Concept cũ phức tạp</td><td>Giá app trong package = giá package × tỷ trọng đơn giá lẻ của app trong package</td><td class="num">T11.2026</td></tr>
+    <tr><td><b>Số năm hợp đồng</b></td><td>Làm tròn xuống</td><td>Làm tròn theo quy tắc cơ bản (≥ 5 làm tròn lên)</td><td class="num">T11.2026</td></tr>
+    <tr><td><b>Time to go-live</b></td><td>TTGL tiêu chuẩn + thời gian cộng thêm của các bộ tiếp theo và PS</td><td>TTGL min / TTGL max</td><td class="num">T11.2026</td></tr>
+    <tr><td><b>Buổi triển khai cơ bản</b></td><td>Chỉ năm đầu tiên</td><td>Có thêm năm tiếp theo: định mức năm 2 = 40%, từ năm 3 = 20%</td><td class="num">Chưa xác định</td></tr>
+    <tr><td><b>Hình thức triển khai</b></td><td>Miễn phí trực tiếp với KH ở HN nếu HĐ &gt; 40 triệu</td><td>Miễn phí dưới 16 km cho cả HN, ĐN, HCM; HĐ từ 40 triệu chỉ miễn phí trong Hạng 2 (16–30 km); bỏ phương án KH hỗ trợ xe cho địa bàn từ 300 km.</td><td class="num">Chưa xác định</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="footer">Lưu ý: Ảnh “Timeline tổng quan” trong Changelogs không đọc được dạng văn bản nên chưa đưa vào. Các bước gắn nhãn “Mới” lấy theo sơ đồ Miro; ngoài bước Leader duyệt CSP và Leader nghiệm thu CSP, mô tả chi tiết của các bước còn lại chưa có trong SSOT nên cần team bổ sung.</p>
+</div>
+
+<script>
+const N = {
+  hd:{c:0,r:0,k:'bpm',t:'QT Hợp đồng',sys:'BPM 3.0 → Income 1.0',owner:'Sales / BC',
+      d:'Hợp đồng được ký và ghi nhận trên BPM 3.0, đồng bộ sang Income 1.0. Là đầu vào kích hoạt quy trình bàn giao khách hàng.',
+      rules:['HĐ trên service giữ nguyên hd_id; HĐ trên BPM được kéo thêm sang hệ thống mới.']},
+  pc:{c:1,r:0,k:'wf',t:'Phân công CS',sla:'4h',sys:'Workflow 3.0 · Bàn giao khách hàng',owner:'Bộ phận phụ trách phân công',
+      d:'CS được phân công theo tiêu chí phù hợp về quy mô và năng lực triển khai.',
+      rules:['Phân công theo từng HĐ. Trong năm HĐ đầu tiên, CS tiếp nhận các phụ lục liên quan và tiếp tục tối ưu cho khách hàng; sau T(1) tùy nhu cầu KH để quyết định triển khai tiếp các PL/HĐ.',
+             '“Ngày tiếp nhận” deal = ngày hoàn thành bước “Phân công CS” trên quy trình bàn giao, cũng là mốc tính TTGL.',
+             'Với khách hàng CSM, CS nhận benefit trên tất cả HĐ phần mềm của KH đó.']},
+  bc:{c:2,r:0,k:'wf',t:'BC giới thiệu CS/SS',sla:'4h',sys:'Workflow 3.0 · Bàn giao khách hàng',owner:'BC',
+      d:'BC tiếp nhận thông tin CS triển khai, hand-off nội bộ và giới thiệu CS vào các kênh làm việc với khách hàng.',
+      rules:['Khi BC hoàn thành bàn giao thông tin triển khai cho CS, deal tự động được tạo trên COHN | QT Triển khai (Sales 3.0) và giao cho CS được phân công.']},
+  xn:{c:3,r:0,k:'wf',t:'CS xác nhận',sla:'72h',sys:'Workflow 3.0 · Bàn giao khách hàng',owner:'CS',
+      d:'Sau khi nhận đủ thông tin hand-off từ BC, CS xác nhận tiếp nhận deal.',
+      rules:['CS move stage tại bước “1. Internal hand-off” trên QT Triển khai; job bàn giao tự động chuyển sang bước tiếp theo của quy trình bàn giao.']},
+  ih:{out:[['Nội dung Hand off','Rich Text','Hand off theo SPICE · bắt buộc'],['Mức độ phức tạp của deal','Dropdown','Nhóm 1: Bài toán dễ, Stakeholder…']],c:3,r:2,k:'sales',t:'1. Internal Hand-off',sla:'72h',sys:'Sales 3.0 · COHN | QT Triển khai 3.0',owner:'CS',
+      d:'Bước đầu tiên của deal triển khai, đồng bộ với bước “CS xác nhận” trên quy trình bàn giao.',
+      rules:['Deal được tạo theo cơ chế như cũ: bóc tách doanh thu theo bộ giải pháp và xác định ngày go-live theo bộ.','HĐ có dịch vụ non-software sẽ được tạo thêm deal trên WFL Nghiệm thu Non-software 3.0.']},
+  ft:{out:[['Link file CSP đề xuất','Text','Link lộ trình triển khai - Leader sẽ review và phê duyệt trên bản này'],['Checkpoint','Table','Cột: Checkpoint, Ngày, Trạng thái…']],c:4,r:2,k:'sales',t:'2. First Touch / Kick-off',sla:'2 ngày',sys:'Sales 3.0 · COHN | QT Triển khai 3.0',owner:'CS',
+      d:'CS có điểm chạm đầu tiên với khách hàng (meeting/call/message).',
+      rules:['Lắng nghe câu chuyện, khai thác bài toán và nhu cầu của KH trong dự án.','DM/PIC hiểu vai trò của CS và tổng quan lộ trình triển khai.','Truyền đạt “Why/Benefit” của giai đoạn, yêu cầu KH chuẩn bị thông tin, tài liệu.','Làm rõ vai trò các stakeholder.']},
+  ld:{out:[['Task review CSP','Task','Giao cho Leader; Leader cần hoàn thành task review CSP cho deal trước khi chuyển bước']],c:5,r:2,k:'lead',t:'2.5 Leader duyệt CSP',isNew:true,ok:true,sla:'1 ngày',sys:'Sales 3.0 · COHN | QT Triển khai 3.0',owner:'CS Leader (CS ở vai trò người theo dõi)',
+      d:'<b>Leader đánh giá CSP theo từng bộ giải pháp:</b> tính khả thi của mốc go-live, mức độ phù hợp của CSP với nhu cầu đã chốt ở First Meeting, điều chỉnh CSP nếu cần.',
+      rules:['<b>Chuyển quyền sở hữu:</b> khi công việc sang bước 2.5, hệ thống tự gán người phụ trách là CS Leader. CS vẫn ở vai trò người theo dõi.',
+             '<b>Leader đánh giá và phản hồi phải ghi lại trên công việc:</b> khi yêu cầu sửa, Leader ghi rõ điểm cần sửa và hạn sửa.',
+             '<b>Thời hạn duyệt (đề xuất):</b> Leader duyệt trong tối đa 24h (01 ngày) làm việc kể từ khi nhận. Hệ thống tự nhắc khi gần hạn và khi quá hạn.',
+             '<b>Quét lại sau khi sửa:</b> CS cập nhật CSP xong thì công việc quay lại hàng chờ duyệt của Leader cho đến khi bản CSP được Leader phê duyệt, chuyển sang bước tiếp theo.']},
+  dx:{out:[['Customer success plan','File','Bản CSP chính thức sau khi đã được Leader phê duyệt']],c:6,r:2,k:'sales',t:'3. Đề xuất CSP với KH',sla:'5 ngày',sys:'Sales 3.0 · COHN | QT Triển khai 3.0',owner:'CS',
+      d:'CS khai thác đầy đủ internal services, xây dựng kế hoạch triển khai (CSP) phù hợp và thống nhất với khách hàng.',
+      rules:['Có thể triển khai theo từng bộ giải pháp với CSP riêng, hoặc một CSP chung cho tất cả các bộ.','Nếu tách nhiều bộ giải pháp, HĐ được duplicate thành nhiều deal, mỗi deal ứng với một bộ.']},
+  tt:{c:7,r:2,k:'sales',t:'4. Thực thi CSP (Setup + Training)',sla:'Theo TTGL',sys:'Sales 3.0 · COHN | QT Triển khai 3.0',owner:'CS',
+      d:'Hoàn thành các key process/internal service theo CSP; DM/PIC hiểu cách vận hành trên Base và có thể chủ động setup, điều chỉnh. Quy trình sẵn sàng vận hành ngay.',
+      rules:['Số hóa các quy trình cốt lõi / danh mục số hóa quan trọng.','Technical hand-off.','Training end user.','Thời hạn theo quy định TTGL của từng bộ giải pháp (mục 3).']},
+  gl:{out:[['Tổng kết các buổi triển khai','Table','Cột: Thời gian, Mục tiêu…'],['Danh mục triển khai giai đoạn 1','Table','Cột: Danh mục, Thuộc bộ (dropdown)…']],c:8,r:2,k:'golive',t:'5. Go-live GĐ1',sla:'≤ hạn TTGL min',sys:'Sales 3.0 → Workflow 3.0',owner:'CS',
+      d:'CS hoàn tất hạng mục CSP ban đầu hoặc toàn bộ thành viên bắt đầu dùng quy trình trên Base. Deal được xác nhận go-live và bước vào giai đoạn đánh giá hiệu quả.',
+      rules:['Chuyển sang bước Leader nghiệm thu CSP trong hạn <b>TTGL min</b> (Ngày phân công CS + TTGL tiêu chuẩn).','Tạo job go-live theo từng bộ giải pháp go-live từ deal, trên CSHN | Xác nhận go-live và đánh giá CHS 3.0.','“Ngày go-live” = ngày tạo job “Xác nhận go-live triển khai”.','Quá hạn mà CS chưa xác nhận hoặc gia hạn → hệ thống tự ghi nhận go-live ngày mùng 1 tháng kế tiếp.','Tại thời điểm go-live, deal được xác định chu kỳ đánh giá theo chính sách hiện hành.']},
+  mr:{out:[['Danh mục triển khai bổ sung','Table','Cột: Danh mục, Thuộc bộ (multi-select)…']],c:9,r:2,k:'sales',t:'6. Triển khai mở rộng',sla:'≤ hạn TTGL max',sys:'Sales 3.0 · COHN | QT Triển khai 3.0',owner:'CS',
+      d:'CS tiếp tục hoàn thành các chặng go-live tiếp theo của dự án (nếu có), cho tới khi tất cả bộ giải pháp hoàn thành đánh giá tháng T4.',
+      rules:['Chuyển sang bước Leader nghiệm thu CSP trong hạn <b>TTGL max</b> (Ngày phân công CS + TTGL tiêu chuẩn + thời gian cộng thêm).','Mỗi bộ go-live sau tạo thêm job go-live riêng trên Workflow 3.0.']},
+  nb:{out:[['Rating chất lượng dịch vụ triển khai','Rating','Hiển thị từ bước BC/CD Nghiệm thu nội bộ'],['Đánh giá của BC/CD về chất lượng triển khai dịch vụ','Text','Hiển thị từ bước BC/CD Nghiệm thu nội bộ']],c:10,r:2,k:'lead',t:'BC/CD Nghiệm thu nội bộ',sla:'Sau đánh giá T4',sys:'Sales 3.0 · COHN | QT Triển khai 3.0',owner:'BC / CD',
+      d:'BC/CD nghiệm thu nội bộ dự án.',
+      rules:['<b>Điều kiện chuyển bước:</b> khi hoàn thành tất cả các CSP.','Đánh giá mức độ hoàn thành dự án theo CSP đã thống nhất với KH đầu dự án.','Feedback chất lượng dịch vụ triển khai theo danh mục dịch vụ CS cung cấp.','Update deal owner thành BC/CD.']},
+  fu:{c:11,r:2,k:'sales',t:'Follow up deal nhiều năm',isNew:true,note:'Nội dung bước này sẽ tiếp tục được bổ sung trong thời gian tới.',sys:'Sales 3.0 · COHN | QT Triển khai 3.0',owner:'CS',
+      d:'Theo dõi và tiếp tục chăm sóc các deal HĐ nhiều năm sau giai đoạn đánh giá năm đầu.',
+      rules:['Từ T11.2026 có buổi triển khai cho năm tiếp theo: định mức năm 2 = 40%, từ năm 3 = 20%.','DT nhiều năm được cộng vào DT triển khai cùng kỳ các năm tiếp theo.']},
+  dn:{c:11,r:1,k:'wf',t:'Đánh giá nhiều năm',isNew:true,ok:true,sys:'Workflow 3.0',owner:'CS',
+      d:'Đánh giá hiệu quả triển khai cho các năm tiếp theo của HĐ nhiều năm.',
+      rules:['Deal nhận từ 01/07/2026: DT ghi nhận hàng năm (50% năm đầu, 50% chia đều các năm sau) và tính com theo performance từng năm.','Doanh thu hàng năm được tự động tính ngày go-live vào tháng đầu tiên của năm tiếp theo.','Chi tiết tiêu chí đánh giá sẽ được bổ sung trong thời gian tới.']},
+  cl:{c:12,r:2,k:'golive',t:'7. Closing',isNew:true,sys:'Sales 3.0',owner:'CS',
+      d:'Đóng deal triển khai sau khi hoàn tất đánh giá tháng T4 và các bước nghiệm thu, follow-up.',
+      rules:['Điều kiện đóng chi tiết chưa có trong SSOT.']},
+  lnt:{c:8,r:3,k:'lead',t:'Leader nghiệm thu CSP',isNew:true,ok:true,sla:'48h',sys:'Workflow 3.0 · Xác nhận go-live & đánh giá CHS',owner:'Leader',
+      d:'Leader review kết quả triển khai của từng bộ giải pháp sau khi deal go-live.',
+      rules:['<b>Đạt:</b> chuyển sang bước Đánh giá tháng T1.','<b>Không đạt:</b> CS cần tiếp tục thực hiện triển khai theo feedback của khách hàng.']},
+  t1:{c:9,r:3,k:'wf',t:'Đánh giá tháng T1',sla:'01 tháng',sys:'Workflow 3.0 · Xác nhận go-live & đánh giá CHS',owner:'CS (hệ thống tự bắn CHS)',
+      d:'Theo dõi và đánh giá tỷ lệ sử dụng trong tháng T1.',
+      rules:['Go-live trước ngày 10: T1 tính từ ngày go-live đến hết tháng đó.','Go-live sau ngày 10: T1 bắt đầu từ ngày 01 tháng kế tiếp.','Hệ thống tự động bắn kết quả CHS_U và CHS_O.','CHS_CS = 70% × CHS_U + 30% × CHS_O; CHS_CS ≥ 50 là triển khai thành công (tính SRR_1).','Từ T11.2026: active theo package chỉ tính app Xspace vào tất cả các bộ; khung quy đổi CHS_U cập nhật trên Work rules.']},
+  t2:{c:10,r:3,k:'wf',t:'Đánh giá tháng T2',sla:'01 tháng',sys:'Workflow 3.0 · Xác nhận go-live & đánh giá CHS',owner:'CS',
+      d:'Theo dõi và đánh giá tỷ lệ sử dụng trong tháng T2 (từ ngày đầu đến ngày cuối tháng).',rules:['Hệ thống tự động bắn CHS_U và CHS_O.']},
+  t3:{c:11,r:3,k:'wf',t:'Đánh giá tháng T3',sla:'01 tháng',sys:'Workflow 3.0 · Xác nhận go-live & đánh giá CHS',owner:'CS',
+      d:'Theo dõi và đánh giá tỷ lệ sử dụng trong tháng T3 (từ ngày đầu đến ngày cuối tháng).',rules:['Hệ thống tự động bắn CHS_U và CHS_O.']},
+  t4:{c:12,r:3,k:'wf',t:'Đánh giá tháng T4',sla:'01 tháng',sys:'Workflow 3.0 · Xác nhận go-live & đánh giá CHS',owner:'CS',
+      d:'Theo dõi và đánh giá tỷ lệ sử dụng trong tháng T4. Kết quả dùng tính SRR_4.',
+      rules:['Hệ thống tự động bắn kết quả CHS_U và CHS_O.','CHS_CS = 70% × CHS_U + 30% × CHS_O; CHS_CS ≥ 50 là triển khai thành công (tính SRR_4).','Từ T11.2026: active theo package chỉ tính app Xspace vào tất cả các bộ; khung quy đổi CHS_U cập nhật trên Work rules.']},
+  n1:{c:3,r:4,k:'ns',t:'Tiếp nhận thông tin',sys:'Workflow 3.0 · Nghiệm thu dịch vụ non-software',owner:'CS',
+      d:'Chỉ áp dụng cho HĐ có dịch vụ non-software (PS/POC/SOP…).',
+      rules:['Outcome: tổng số buổi triển khai (online/offline), đội ngũ triển khai, các hạng mục cần triển khai.']},
+  n2:{c:4,r:4,k:'ns',t:'Khảo sát / Lập kế hoạch',sys:'Workflow 3.0 · Nghiệm thu dịch vụ non-software',owner:'CS',
+      d:'Khảo sát và lập lộ trình triển khai.',rules:['Tổng hợp khảo sát (theo mẫu khảo sát tiêu chuẩn).','Kế hoạch lộ trình triển khai (theo mẫu kế hoạch).']},
+  n3:{c:5,r:4,k:'ns',t:'Triển khai',sys:'Workflow 3.0 · Nghiệm thu dịch vụ non-software',owner:'CS',
+      d:'Thực hiện theo gói dịch vụ sử dụng.',
+      rules:['Số hóa & chuyển giao công nghệ: số buổi thiết lập, số nghiệp vụ, quy định tính công, bảng lương hỗ trợ thiết lập.','Đào tạo & vận hành: danh sách buổi đào tạo, bài kiểm tra và kết quả.','Đồng hành & tối ưu: danh sách buổi tối ưu, số tháng hỗ trợ sau vận hành.','Tài liệu: danh sách tài liệu đóng gói.']},
+  n4:{c:6,r:4,k:'ns',t:'Bàn giao hệ thống',sys:'Workflow 3.0 · Nghiệm thu dịch vụ non-software',owner:'CS',
+      d:'Bàn giao kết quả cho khách hàng.',rules:['Biên bản bàn giao/nghiệm thu dự kiến.','Tổng hợp tài liệu triển khai.','Điểm trung bình đánh giá của KH về onboarding service.']},
+  n5:{c:7,r:4,k:'lead',t:'BC nghiệm thu',sys:'Workflow 3.0 · Nghiệm thu dịch vụ non-software',owner:'BC',
+      d:'BC nghiệm thu dịch vụ non-software.',rules:['Biên bản nghiệm thu đã hoàn thiện.','Đánh giá của BC/CD về chất lượng triển khai dịch vụ.']},
+  n6:{c:8,r:4,k:'ns',t:'Tối ưu định kỳ',sys:'Workflow 3.0 · Nghiệm thu dịch vụ non-software',owner:'CS',
+      d:'Theo dõi sử dụng định kỳ sau bàn giao.',rules:['Báo cáo tần suất sử dụng (theo mẫu báo cáo).']}
+};
+const E = [
+  ['hd','pc'],['pc','bc'],['bc','xn'],['xn','ih',{dash:true}],
+  ['ih','ft'],['ft','ld'],['ld','dx'],['dx','tt'],['tt','gl'],['gl','mr'],['mr','nb'],['nb','fu'],['fu','cl'],['fu','dn'],
+  ['gl','lnt',{dash:true,land:.3}],['mr','lnt',{dash:true,land:.62,low:true}],['lnt','t1'],['t1','t2'],['t2','t3'],['t3','t4'],['t4','cl'],
+  ['ih','n1',{dash:true,label:'HĐ có dịch vụ non-software'}],['n1','n2'],['n2','n3'],['n3','n4'],['n4','n5'],['n5','n6']
+];
+const DIAGRAMS = [
+  { id:'diagram', cols:10, maxCW:170, padL:0, padR:12,
+    pos:{hd:[0,0],pc:[1,0],bc:[2,0],xn:[3,0],
+         dn:[8,1],
+         ih:[0,2],ft:[1,2],ld:[2,2],dx:[3,2],tt:[4,2],gl:[5,2],mr:[6,2],nb:[7,2],fu:[8,2],cl:[9,2],
+         lnt:[5,3],t1:[6,3],t2:[7,3],t3:[8,3],t4:[9,3],
+         n1:[0,4],n2:[1,4],n3:[2,4],n4:[3,4],n5:[4,4],n6:[5,4]},
+    RH:[130,110,112,136,136],
+    lanes:[{rows:[0],title:'Hợp đồng & Bàn giao',sys:'BPM 3.0 · Workflow 3.0',fill:'--lane-a'},
+           {rows:[1,2],title:'QT Triển khai khách hàng',sys:'Sales 3.0',fill:'--lane-b'},
+           {rows:[3],title:'Go-live & đánh giá CHS',sys:'Workflow 3.0',fill:'--lane-a',after:'ih'},
+           {rows:[4],title:'Nghiệm thu Non-software',sys:'Workflow 3.0',fill:'--lane-b',after:'ih'}] }
+];
+const LX=16, NH=66, PADT=0, LH=26, svgNS='http://www.w3.org/2000/svg';
+
+function render(D){
+  const dg=document.getElementById(D.id);
+  while(dg.firstChild) dg.removeChild(dg.firstChild);
+  const avail=dg.parentElement.clientWidth-2;
+  const CW=Math.max(92,Math.min(D.maxCW,(avail-LX-D.padL-D.padR)/D.cols));
+  const NW=Math.min(CW-12,150);
+  const rowY=[]; {let y=PADT; D.RH.forEach((h,i)=>{rowY[i]=y; y+=h;});}
+  const H=rowY[D.RH.length-1]+D.RH[D.RH.length-1]+8;
+  const W=Math.max(avail, LX+D.padL+D.cols*CW+D.padR);
+  const pos=id=>{const [c,r]=D.pos[id]; const x=LX+D.padL+c*CW+(CW-NW)/2; const y=rowY[r]+LH+(D.RH[r]-LH-NH)/2-6; return {x,y,cx:x+NW/2,cy:y+NH/2,c,r};};
+  dg.style.width=W+'px'; dg.style.height=H+'px';
+  const svg=document.createElementNS(svgNS,'svg');
+  svg.setAttribute('width',W); svg.setAttribute('height',H); svg.setAttribute('aria-hidden','true');
+  svg.innerHTML=`<defs><marker id="ah-${D.id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker></defs>`;
+  const el=(tag,attrs)=>{const e=document.createElementNS(svgNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);svg.appendChild(e);return e;};
+  D.lanes.forEach((L,i)=>{
+    const y=rowY[L.rows[0]], h=L.rows.reduce((s,r)=>s+D.RH[r],0);
+    el('rect',{x:0,y,width:W,height:h,style:`fill:var(${L.fill})`});
+    if(i>0) el('line',{x1:0,x2:W,y1:y,y2:y,style:'stroke:var(--line)'});
+    const lab=document.createElement('div'); lab.className='lane-label';
+    lab.style.top=(y+8)+'px'; lab.style.left=(L.after?pos(L.after).cx+14:LX)+'px';
+    lab.innerHTML=`<b>${L.title}</b> · ${L.sys}`; dg.appendChild(lab);
+  });
+  const mk=`url(#ah-${D.id})`;
+  const text=(x,y,t,anchor)=>{const e=el('text',{x,y,class:'elabel'});if(anchor)e.setAttribute('text-anchor',anchor);e.textContent=t;};
+  E.filter(([a,b])=>D.pos[a]&&D.pos[b]).forEach(([a,b,o={}])=>{
+    const A=pos(a),B=pos(b); let d,lx,ly;
+    if(A.r===B.r){ d=`M${A.x+NW},${A.cy} L${B.x-2},${B.cy}`; }
+    else if(A.c===B.c){
+      d = B.r>A.r ? `M${A.cx},${A.y+NH} L${B.cx},${B.y-2}` : `M${A.cx},${A.y} L${B.cx},${B.y+NH+2}`;
+      lx=A.cx+8; ly=(Math.min(A.y,B.y)+Math.max(A.y,B.y)+NH)/2+12;
+    } else {
+      const mid = o.low ? rowY[B.r]+20 : (B.r-A.r>1 && A.r===0 ? rowY[1]+48 : rowY[B.r]-2);
+      const bx = o.land!=null ? B.x+NW*o.land : B.cx;
+      d=`M${A.cx},${A.y+NH} L${A.cx},${mid} L${bx},${mid} L${bx},${B.y-2}`;
+      lx=(A.cx+bx)/2; ly=mid-6;
+    }
+    el('path',{d,class:'edge'+(o.dash?' dash':''),'marker-end':mk});
+    if(o.label) text(lx,ly,o.label, A.c!==B.c&&A.r!==B.r?'middle':null);
+  });
+  if(D.stubOut){const A=pos(D.stubOut.from); el('path',{d:`M${A.x+NW},${A.cy} L${A.x+NW+56},${A.cy}`,class:'edge dash','marker-end':mk}); text(A.x+NW+6,A.cy-8,D.stubOut.label);}
+  if(D.stubIn){const B=pos(D.stubIn.to); el('path',{d:`M${B.x-60},${B.cy} L${B.x-2},${B.cy}`,class:'edge dash','marker-end':mk}); text(B.x-60,B.cy-8,D.stubIn.label);}
+  dg.appendChild(svg);
+  Object.keys(D.pos).forEach(id=>{
+    const n=N[id],p=pos(id),b=document.createElement('button');
+    b.className='node k-'+n.k+(id===current?' sel':''); b.dataset.id=id; b.type='button';
+    b.style.left=p.x+'px'; b.style.top=p.y+'px'; b.style.width=NW+'px'; b.style.height=NH+'px';
+    b.innerHTML=`${n.t}${n.isNew?'<span class="badge">Mới</span>':''}${n.out?`<span class="obadge" title="Có ${n.out.length} OUTPUT bắt buộc">OUTPUT</span>`:''}${n.sla?`<span class="sla">${n.sla}</span>`:''}`;
+    b.addEventListener('click',()=>show(id)); dg.appendChild(b);
+  });
+}
+
+const detail=document.getElementById('detail');
+let current='pc';
+const sysTag = s => s.includes('Sales')&&!s.includes('→') ? 't-sales' : s.startsWith('BPM') ? 't-bpm' : 't-wf';
+function show(id){
+  current=id; const n=N[id];
+  document.querySelectorAll('.node').forEach(el=>el.classList.toggle('sel',el.dataset.id===id));
+  detail.innerHTML=`
+    <div>
+      <h3>${n.t} ${n.isNew?'<span class="tag t-new">Mới</span>':''}</h3>
+      <p style="margin:0">${n.d}</p>
+      <dl class="kv">
+        <dt>Hệ thống</dt><dd><span class="tag ${sysTag(n.sys)}">${n.sys}</span></dd>
+        <dt>Phụ trách</dt><dd>${n.owner||'–'}</dd>
+        <dt>SLA</dt><dd>${n.sla||'–'}</dd>
+      </dl>
+      ${n.out?`<div class="outbox"><h4>OUTPUT bắt buộc tại bước (${n.out.length} trường)</h4><table class="otbl"><thead><tr><th>Trường dữ liệu</th><th>Kiểu</th><th>Ghi chú</th></tr></thead><tbody>${n.out.map(o=>`<tr><td><b>${o[0]}</b></td><td><span class="tag t-wf">${o[1]}</span></td><td class="muted">${o[2]}</td></tr>`).join('')}</tbody></table></div>`:''}
+    </div>
+    <div>
+      <h3 style="font-size:15px">Quy tắc vận hành / Outcome</h3>
+      <ul>${(n.rules||[]).map(r=>`<li>${r}</li>`).join('')}</ul>
+      ${n.isNew&&!n.ok?`<div class="callout">${n.note||'Bước xuất hiện trên sơ đồ Miro mới; mô tả ở đây được suy ra từ vị trí trên luồng và cần team xác nhận.'}</div>`:''}
+    </div>`;
+}
+const renderAll=()=>DIAGRAMS.forEach(render);
+renderAll();
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(renderAll,120);});
+show('pc');
+
+</script>
+</body>
+</html>
